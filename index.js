@@ -19,6 +19,17 @@
 *  more infos https://github.com/awallef/askjim-node
 *
 */
+
+/*
+
+facade => Jim
+Command => task
+Process => work
+fork => jimi
+Jim.askJimi => sendMessage
+Jimi.askFather => sendMessage
+*/
+
 (function(scope) {
 
   /***
