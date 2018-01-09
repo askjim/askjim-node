@@ -19,6 +19,10 @@
 *  more infos https://github.com/awallef/askjim-node
 *
 */
+
+// required stuff
+const { fork } = require('child_process');
+
 (function(scope) {
 
   /***
@@ -906,19 +910,97 @@
   *    \________|__|__|_|  /
   *                      \/
   */
-  function Jim( )
+  function Jim(parentProcess)
   {
-    this._initialize(  );
+    this._initialize(parentProcess);
   }
+  // INIT
+  Jim.prototype._initialize = function(parentProcess)
+  {
+    this.controller = new Controller();
+    this.model = new Model();
+
+    this.controller.jim = this;
+    this.controller.processor.jim = this;
+    this.controller.sequencer.jim = this;
+    this.model.jim = this;
+
+    this.jimiesMap = {};
+    this.forksMap = {};
+
+    if(parentProcess)
+    {
+      this.parentProcess = parentProcess;
+      this.parentProcess.on('message', this.handleForkMessage)
+    }
+  };
+
+  Jim.prototype.init = function(configObject){}; // on your behalf to trigger it...
+
+  // MAIN FCT
+  Jim.prototype.ask = function(label, body, type)
+  {
+    this.controller.ask(label, body, type);
+  };
+
+  Jim.prototype.askParent = function(label, body, type)
+  {
+    if(this.parentProcess == null) return;
+    this.parentProcess.send({label, body, type});
+  };
+
+  Jim.prototype.askFork = function(name, label, body, type)
+  {
+    if (this.forkMap.hasOwnProperty(name))
+    {
+      this.forkMap[ name ].send({label, body, type});
+    }
+  };
+
+  Jim.prototype.dispatch = function(instructionName, body, type, header)
+  {
+    this.controller.dispatch(instructionName, body, type, header);
+  };
 
   Jim.prototype.log = function(obj)
   {
     Jim.log(obj);
   };
 
-  Jim.prototype.ask = function(label, body, type)
+  // FORKS
+  Jim.prototype.handleForkMessage = function(msg)
   {
-    this.controller.ask(label, body, type);
+    if(typeof msg === 'string') return this.ask(msg);
+    if(typeof msg === 'object')
+    {
+      if(msg.label)
+      {
+        let body = msg.body || {};
+        return this.ask(msg.label, body);
+      }
+    }
+
+    return this.log('Jim cannot handle fork message: ' + msg);
+  };
+
+  // CHILD FORKS
+  Jim.prototype.registerFork = function(name, path)
+  {
+    if (!this.forkMap.hasOwnProperty(name))
+    {
+      this.forkMap[ name ] = fork(path);
+      this.forkMap[ name ].on('message', this.handleForkMessage);
+      this.log('Fork: ' + name + ' (child process) @ '+ path +' has been added to your Application');
+    }
+  };
+
+  Jim.prototype.removeFork = function(name)
+  {
+    if (this.forkMap.hasOwnProperty(name))
+    {
+      this.forkMap[ name ].kill();
+      delete this.forkMap[ name ];
+    }
   };
 
   // CRON JOB
@@ -937,25 +1019,6 @@
   Jim.prototype.stopAllCronJob = function(andDestroy)
   {
     this.controller.sequencer.stopAllCronJob(andDestroy);
-  };
-
-  Jim.prototype._initialize = function()
-  {
-    this.controller = new Controller();
-    this.model = new Model();
-
-    this.controller.jim = this;
-    this.controller.processor.jim = this;
-    this.controller.sequencer.jim = this;
-    this.model.jim = this;
-
-    this.jimiesMap = {};
-
-  };
-
-  Jim.prototype.init = function(configObject)
-  {
-
   };
 
   // JIMI
@@ -1082,22 +1145,11 @@
     return this.controller.hasService(serviceName);
   };
 
-  Jim.prototype.dispatch = function(instructionName, body, type, header)
-  {
-    this.controller.dispatch(instructionName, body, type, header);
-  };
-
-  Jim.prototype.dispatchObservers = function(instruction)
-  {
-    if (this.controller != null)
-    {
-      this.controller.dispatchObservers(instruction);
-    }
-  };
-
   Jim.prototype.controller = null;
   Jim.prototype.model = null;
   Jim.prototype.jimiesMap = null;
+  Jim.prototype.forksMap = null;
+  Jim.prototype.parentProcess = null;
 
   Jim.log = function(obj)
   {
