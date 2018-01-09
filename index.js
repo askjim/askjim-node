@@ -328,47 +328,10 @@
 
   Jimi.prototype.initializeJimi = function(configObject)
   {
-    this.initProxies(configObject);
-    this.initServices(configObject);
-    this.initTasks(configObject);
-    this.initProcesses(configObject);
-
-    this.runInstall(configObject);
   };
-
-  Jimi.prototype.initProxies = function(configObject) {
-  };
-  Jimi.prototype.initServices = function(configObject) {
-  };
-  Jimi.prototype.initTasks = function(configObject) {
-  };
-  Jimi.prototype.initProcesses = function(configObject) {
-  };
-
-  Jimi.prototype.runInstall = function(configObject) {
-  };
-
 
   Jimi.prototype.removeJimi = function(  )
   {
-    this.removeProxies(  );
-    this.removeServices(  );
-    this.removeTasks(  );
-    this.removeProcesses(  );
-
-    this.runUninstall(  );
-  };
-
-  Jimi.prototype.removeProxies = function(  ) {
-  };
-  Jimi.prototype.removeServices = function(  ) {
-  };
-  Jimi.prototype.removeTasks = function(  ) {
-  };
-  Jimi.prototype.removeProcesses = function(  ) {
-  };
-
-  Jimi.prototype.runUninstall = function(  ) {
   };
 
   Jimi.prototype.name = null;
@@ -454,7 +417,7 @@
         body = null;
         type = null;
       } else {
-        this.processMap[processName].state = Process.READY;
+        this.processMap[processName].state = Process.WAIT;
         delete this.activeProcesses[ this.processMap[processName].pid ];
         this.jim.log("Processor -> process " + processName + " is Finished");
       }
@@ -500,124 +463,12 @@
   *            \/     \/   |__|           \/     \/     \/    \/
   */
   function Sequencer() {
+    this.cronMap = {};
   }
-
-  Sequencer.prototype.jim = null;
-  Sequencer.prototype._cronStack = {};
-  Sequencer.prototype._animationFrameStack = {};
-  Sequencer.prototype._runningFrameStack = [];
-  Sequencer.prototype._isFrameLoopRunnig = false;
-
-  Sequencer.prototype.goTo = function(label, body, type)
-  {
-    if (body == null)
-    body = {};
-    this._exec(label, body, type);
-  };
 
   Sequencer.prototype.cronExec = function(note)
   {
-    this.goTo(note.name, note.body, note.type);
-  };
-
-  Sequencer.prototype._exec = function(label, body, type)
-  {
-    if (this.jim.controller.processor.hasProcess(label))
-    {
-      this.jim.controller.processor.execute(label, body, type);
-    } else {
-      this.jim.dispatch(label, body, type);
-    }
-  };
-
-  /* Animation request JOB
-  **********************************************/
-  Sequencer.prototype.registerAnimationFrameJob = function(labelOrName, note)
-  {
-    this._animationFrameStack[labelOrName] = note;
-  };
-
-  Sequencer.prototype.startAnimationFrameJob = function(labelOrName)
-  {
-    if (!this._animationFrameStack[labelOrName])
-    return;
-    var doesJobExists = false;
-    for (var i = 0; i < this._runningFrameStack.length; i++)
-    {
-      if (this._runningFrameStack[i] == labelOrName)
-      {
-        doesJobExists = true;
-      }
-    }
-    if (!doesJobExists)
-    {
-      this._runningFrameStack.push(labelOrName);
-    }
-    if (!this._isFrameLoopRunnig)
-    {
-      this.jim.log('Start Animation Frame loop');
-      this._isFrameLoopRunnig = true;
-      this.loop();
-    }
-  };
-
-  Sequencer.prototype.stopAnimationFrameJob = function(labelOrName, andDestroy)
-  {
-    if (this._animationFrameStack[labelOrName])
-    {
-      var newStack = [];
-      for (var i = 0; i < this._runningFrameStack.length; i++)
-      {
-        if (this._runningFrameStack[i] != labelOrName)
-        {
-          newStack = this._runningFrameStack[i];
-        }
-      }
-
-      this._runningFrameStack = newStack;
-
-      if (this._runningFrameStack.length == 0) {
-        this.jim.log('Stop Animation Frame loop');
-        this._isFrameLoopRunnig = false;
-      }
-
-      if (andDestroy)
-      {
-        delete this._animationFrameStack[labelOrName];
-      }
-
-    }
-  };
-
-  Sequencer.prototype.stopAllAnimationFrameJob = function(andDestroy)
-  {
-    for (var i in this._cronStack)
-    {
-      this._runningFrameStack = [];
-      this.jim.log('Stop Animation Frame loop');
-      this._isFrameLoopRunnig = false;
-      if (andDestroy)
-      {
-        this._animationFrameStack = {};
-      }
-    }
-  };
-
-  Sequencer.prototype.loop = function()
-  {
-    if (!this._isFrameLoopRunnig)
-    return;
-
-    requestAnimationFrame((function(self) {
-      return function() {
-        self.loop();
-      }
-    })(this));
-
-    for (var i = 0; i < this._runningFrameStack.length; i++)
-    {
-      this.cronExec(this._animationFrameStack[ this._runningFrameStack[i] ]);
-    }
+    this.jim.controller.ask(note.name, note.body, note.type);
   };
 
   /* CRON JOB
@@ -625,12 +476,12 @@
   Sequencer.prototype.registerCronJob = function(labelOrName, delay, note, stopCount)
   {
 
-    if (!this._cronStack[labelOrName])
+    if (!this.cronMap[labelOrName])
     {
-      this._cronStack[labelOrName] = new CronJob(this, labelOrName, delay, note, stopCount);
+      this.cronMap[labelOrName] = new CronJob(this, labelOrName, delay, note, stopCount);
     } else {
 
-      var cron = this._cronStack[labelOrName];
+      var cron = this.cronMap[labelOrName];
       cron.stop();
       cron.labelOrName = labelOrName;
       cron.delay = delay;
@@ -642,19 +493,19 @@
 
   Sequencer.prototype.startCronJob = function(labelOrName)
   {
-    if (this._cronStack[labelOrName])
-    (this._cronStack[labelOrName]).start();
+    if (this.cronMap[labelOrName])
+    (this.cronMap[labelOrName]).start();
   };
 
   Sequencer.prototype.stopCronJob = function(labelOrName, andDestroy)
   {
-    if (this._cronStack[labelOrName])
+    if (this.cronMap[labelOrName])
     {
-      this._cronStack[labelOrName].stop();
+      this.cronMap[labelOrName].stop();
       if (andDestroy)
       {
-        this._cronStack[labelOrName].destroy();
-        delete this._cronStack[labelOrName];
+        this.cronMap[labelOrName].destroy();
+        delete this.cronMap[labelOrName];
       }
 
     }
@@ -662,16 +513,19 @@
 
   Sequencer.prototype.stopAllCronJob = function(andDestroy)
   {
-    for (var i in this._cronStack)
+    for (var i in this.cronMap)
     {
-      this._cronStack[i].stop();
+      this.cronMap[i].stop();
       if (andDestroy)
       {
-        this._cronStack[i].destroy();
-        delete this._cronStack[i];
+        this.cronMap[i].destroy();
+        delete this.cronMap[i];
       }
     }
   };
+
+  Sequencer.prototype.jim = null;
+  Sequencer.prototype.cronMap = null;
 
   /***
   *    _________                            ____.     ___.
@@ -758,7 +612,7 @@
     this.pid = pid;
     this.step = 0;
     this.tasksArray = tasksArray;
-    this.state = this.constructor.READY;
+    this.state = this.constructor.WAIT;
   }
 
   Process.prototype.getCurrentTask = function()
@@ -775,141 +629,9 @@
   Process.prototype.step = null;
   Process.prototype.tasksArray = null;
 
-  Process.READY = 'Process.READY';
+  Process.WAIT = 'Process.WAIT';
   Process.RUNNING = 'Process.RUNNING';
   Process.CRASHED = 'Process.CRASHED';
-
-  /***
-  *    ____   ____.__
-  *    \   \ /   /|__| ______  _  __
-  *     \   Y   / |  |/ __ \ \/ \/ /
-  *      \     /  |  \  ___/\     /
-  *       \___/   |__|\___  >\/\_/
-  *                       \/
-  */
-  function View( )
-  {
-    this.serviceMap = [];
-    this.observerMap = [];
-  }
-
-  View.prototype.registerObserver = function(instructionName, observer)
-  {
-    if (this.observerMap[instructionName] != null)
-    {
-      this.observerMap[instructionName].push(observer);
-    }
-    else
-    {
-      this.observerMap[instructionName] = [observer];
-    }
-  };
-
-  View.prototype.dispatchObservers = function(instruction)
-  {
-    if (this.observerMap[instruction.getName()] != null)
-    {
-      var observers_ref = this.observerMap[instruction.getName()], observers = [], observer
-
-      for (var i = 0; i < observers_ref.length; i++)
-      {
-        observer = observers_ref[i];
-        observers.push(observer);
-      }
-
-      for (var i = 0; i < observers.length; i++)
-      {
-        observer = observers[i];
-        observer.dispatchObserver(instruction);
-      }
-    }
-
-
-  };
-
-  View.prototype.removeObserver = function(instructionName, dispatchContext)
-  {
-    var observers = this.observerMap[instructionName];
-    for (var i = 0; i < observers.length; i++)
-    {
-      if (observers[i].compareDispatchContext(dispatchContext) == true)
-      {
-        observers.splice(i, 1);
-        break;
-      }
-    }
-
-    if (observers.length == 0)
-    {
-      delete this.observerMap[instructionName];
-    }
-  };
-
-  View.prototype.registerService = function(service)
-  {
-    if (this.serviceMap[service.getServiceName()] != null)
-    {
-      return;
-    }
-
-    service.jim = this.jim;
-    // register the service for retrieval by name
-    this.serviceMap[service.getServiceName()] = service;
-
-    // get instruction interests if any
-    var interests = service.listInstructionInterests();
-
-    // register service as an observer for each instruction
-    if (interests.length > 0)
-    {
-      // create observer referencing this services handleInstruction method
-      var observer = new Observer(service.handleInstruction, service);
-      for (var i = 0; i < interests.length; i++)
-      {
-        this.registerObserver(interests[i], observer);
-      }
-    }
-
-    service.onRegister();
-  };
-
-  View.prototype.retrieveService = function(serviceName)
-  {
-    return this.serviceMap[serviceName];
-  };
-
-  View.prototype.removeService = function(serviceName)
-  {
-    var service = this.serviceMap[serviceName];
-    if (service)
-    {
-      // for every instruction the service is interested in...
-      var interests = service.listInstructionInterests();
-      for (var i = 0; i < interests.length; i++)
-      {
-        // remove the observer linking the service to the instruction
-        // interest
-        this.removeObserver(interests[i], service);
-      }
-
-      // remove the service from the map
-      delete this.serviceMap[serviceName];
-
-      // alert the service that it has been removed
-      service.onRemove();
-    }
-
-    return service;
-  };
-
-  View.prototype.hasService = function(serviceName)
-  {
-    return this.serviceMap[serviceName] != null;
-  };
-
-  View.prototype.jim = null;
-  View.prototype.serviceMap = null;
-  View.prototype.observerMap = null;
 
   /***
   *       _____             .___     .__
@@ -968,11 +690,56 @@
   function Controller( )
   {
     this.taskMap = [];
+    this.serviceMap = [];
+    this.observerMap = [];
+    this.stackMode = false;
+    this.stack = [];
     this.processor = new Processor();
     this.sequencer = new Sequencer();
-    this.eventHandler = new EventHandler();
   }
 
+  Controller.prototype.dispatch = function(instructionName, body, type, header)
+  {
+    this.stack.push(new Instruction(instructionName, body, type, header));
+    this.flushStack();
+  };
+
+  Controller.prototype.flushStack = function()
+  {
+    if (this.stack.length == 0)
+    return;
+
+    if (this.isStackMode)
+    {
+      setTimeout(this.flushStack, 300);
+
+    } else {
+      var note = this.stack.shift();
+      //this.log('jim send instruction: ' + note.name);
+      this.dispatchObservers(note);
+      if (this.stack.length > 0)
+      setTimeout(this.flushStack, 300);
+    }
+  };
+
+  Controller.prototype.ask = function(label, body, type)
+  {
+    if (body == null)
+    body = {};
+    this._exec(label, body, type);
+  };
+
+  Controller.prototype._exec = function(label, body, type)
+  {
+    if (this.processor.hasProcess(label))
+    {
+      this.processor.execute(label, body, type);
+    } else {
+      this.jim.dispatch(label, body, type);
+    }
+  };
+
+  // TASKS MANAGEMENT
   Controller.prototype.executeTask = function(note)
   {
     var taskClassRef = this.taskMap[note.getName()];
@@ -989,7 +756,7 @@
   {
     if (this.taskMap[instructionName] == null)
     {
-      this.view.registerObserver(instructionName, new Observer(this.executeTask, this));
+      this.registerObserver(instructionName, new Observer(this.executeTask, this));
     }
 
     this.taskMap[instructionName] = taskClassRef;
@@ -1004,17 +771,132 @@
   {
     if (this.hasTask(instructionName))
     {
-      this.view.removeObserver(instructionName, this);
+      this.removeObserver(instructionName, this);
       this.taskMap[instructionName] = null;
     }
   };
 
+  // OBSERVERS MANAGEMENT
+  Controller.prototype.registerObserver = function(instructionName, observer)
+  {
+    if (this.observerMap[instructionName] != null)
+    {
+      this.observerMap[instructionName].push(observer);
+    }
+    else
+    {
+      this.observerMap[instructionName] = [observer];
+    }
+  };
+
+  Controller.prototype.dispatchObservers = function(instruction)
+  {
+    if (this.observerMap[instruction.getName()] != null)
+    {
+      var observers_ref = this.observerMap[instruction.getName()], observers = [], observer
+
+      for (var i = 0; i < observers_ref.length; i++)
+      {
+        observer = observers_ref[i];
+        observers.push(observer);
+      }
+
+      for (var i = 0; i < observers.length; i++)
+      {
+        observer = observers[i];
+        observer.dispatchObserver(instruction);
+      }
+    }
+  };
+
+  Controller.prototype.removeObserver = function(instructionName, dispatchContext)
+  {
+    var observers = this.observerMap[instructionName];
+    for (var i = 0; i < observers.length; i++)
+    {
+      if (observers[i].compareDispatchContext(dispatchContext) == true)
+      {
+        observers.splice(i, 1);
+        break;
+      }
+    }
+
+    if (observers.length == 0)
+    {
+      delete this.observerMap[instructionName];
+    }
+  };
+
+  Controller.prototype.registerService = function(service)
+  {
+    if (this.serviceMap[service.getServiceName()] != null)
+    {
+      return;
+    }
+
+    service.jim = this.jim;
+    // register the service for retrieval by name
+    this.serviceMap[service.getServiceName()] = service;
+
+    // get instruction interests if any
+    var interests = service.listInstructionInterests();
+
+    // register service as an observer for each instruction
+    if (interests.length > 0)
+    {
+      // create observer referencing this services handleInstruction method
+      var observer = new Observer(service.handleInstruction, service);
+      for (var i = 0; i < interests.length; i++)
+      {
+        this.registerObserver(interests[i], observer);
+      }
+    }
+
+    service.onRegister();
+  };
+
+  Controller.prototype.retrieveService = function(serviceName)
+  {
+    return this.serviceMap[serviceName];
+  };
+
+  Controller.prototype.removeService = function(serviceName)
+  {
+    var service = this.serviceMap[serviceName];
+    if (service)
+    {
+      // for every instruction the service is interested in...
+      var interests = service.listInstructionInterests();
+      for (var i = 0; i < interests.length; i++)
+      {
+        // remove the observer linking the service to the instruction
+        // interest
+        this.removeObserver(interests[i], service);
+      }
+
+      // remove the service from the map
+      delete this.serviceMap[serviceName];
+
+      // alert the service that it has been removed
+      service.onRemove();
+    }
+
+    return service;
+  };
+
+  Controller.prototype.hasService = function(serviceName)
+  {
+    return this.serviceMap[serviceName] != null;
+  };
+
   Controller.prototype.jim = null;
-  Controller.prototype.view = null;
   Controller.prototype.taskMap = null;
+  Controller.prototype.serviceMap = null;
+  Controller.prototype.observerMap = null;
+  Controller.prototype.stackMode = null;
+  Controller.prototype.stack = null;
   Controller.prototype.processor = null;
   Controller.prototype.sequencer = null;
-  Controller.prototype.eventHandler = null;
 
   /***
   *         ____.__
@@ -1026,7 +908,7 @@
   */
   function Jim( )
   {
-    this._initializeFacade(  );
+    this._initialize(  );
   }
 
   Jim.prototype.log = function(obj)
@@ -1034,42 +916,9 @@
     Jim.log(obj);
   };
 
-  Jim.prototype.goTo = function(label, body, type)
+  Jim.prototype.ask = function(label, body, type)
   {
-    this.controller.sequencer.goTo(label, body, type);
-  };
-
-  // Event Handler
-  Jim.prototype.doesHandleEvent = function(labelOrName)
-  {
-    return this.controller.eventHandler.doesHandleEvent( labelOrName );
-  };
-
-  Jim.prototype.registerEventHandler = function(labelOrName, element, event, note, useCapture, stopPropagation)
-  {
-    this.controller.eventHandler.registerEventHandler(labelOrName, element, event, note, useCapture, stopPropagation);
-  };
-
-  Jim.prototype.removeEventHandler = function(labelOrName)
-  {
-    this.controller.eventHandler.removeEventHandler(labelOrName);
-  };
-  // Animation Frame JOB
-  Jim.prototype.registerAnimationFrameJob = function(labelOrName, note)
-  {
-    this.controller.sequencer.registerAnimationFrameJob(labelOrName, note);
-  };
-  Jim.prototype.startAnimationFrameJob = function(labelOrName)
-  {
-    this.controller.sequencer.startAnimationFrameJob(labelOrName);
-  };
-  Jim.prototype.stopAnimationFrameJob = function(labelOrName, andDestroy)
-  {
-    this.controller.sequencer.stopAnimationFrameJob(labelOrName, andDestroy);
-  };
-  Jim.prototype.stopAllAnimationFrameJob = function(andDestroy)
-  {
-    this.controller.sequencer.stopAllAnimationFrameJob(andDestroy);
+    this.controller.ask(label, body, type);
   };
 
   // CRON JOB
@@ -1090,22 +939,15 @@
     this.controller.sequencer.stopAllCronJob(andDestroy);
   };
 
-  Jim.prototype._initializeFacade = function()
+  Jim.prototype._initialize = function()
   {
-    this.view = new View();
     this.controller = new Controller();
     this.model = new Model();
 
-    this.view.jim = this;
     this.controller.jim = this;
-    this.controller.view = this.view;
     this.controller.processor.jim = this;
     this.controller.sequencer.jim = this;
-    this.controller.eventHandler.jim = this;
     this.model.jim = this;
-
-    this.stackMode = false;
-    this.stack = [];
 
     this.jimiesMap = {};
 
@@ -1113,37 +955,10 @@
 
   Jim.prototype.init = function(configObject)
   {
-    this.initJimies(configObject);
-    this.initRessources(configObject);
-    this.initProxies(configObject);
-    this.initServices(configObject);
-    this.initTasks(configObject);
-    this.initProcesses(configObject);
-    this.initHandlers(configObject);
-    this.initSequences(configObject);
-    this.bootstrap(configObject);
+
   };
 
-  Jim.prototype.initRessources = function(configObject) {
-  };
-  Jim.prototype.initProxies = function(configObject) {
-  };
-  Jim.prototype.initServices = function(configObject) {
-  };
-  Jim.prototype.initTasks = function(configObject) {
-  };
-  Jim.prototype.initProcesses = function(configObject) {
-  };
-  Jim.prototype.initJimies = function(configObject) {
-  };
-  Jim.prototype.initHandlers = function(configObject) {
-  };
-  Jim.prototype.initSequences = function(configObject) {
-  };
-  Jim.prototype.bootstrap = function(configObject) {
-  };
-
-  // SERVICES
+  // JIMI
   Jim.prototype.registerJimi = function(name, jimiClass, configObject)
   {
     if (!this.jimiesMap.hasOwnProperty(name))
@@ -1239,24 +1054,24 @@
   // VIEW SHORT CUTS
   Jim.prototype.registerService = function(service)
   {
-    if (this.view != null)
+    if (this.controller != null)
     {
-      this.view.registerService(service);
+      this.controller.registerService(service);
       this.log('Service ' + service.serviceName + ' has been registered');
     }
   };
 
   Jim.prototype.retrieveService = function(serviceName)
   {
-    return this.view.retrieveService(serviceName);
+    return this.controller.retrieveService(serviceName);
   };
 
   Jim.prototype.removeService = function(serviceName)
   {
     var service = null;
-    if (this.view != null)
+    if (this.controller != null)
     {
-      service = this.view.removeService(serviceName);
+      service = this.controller.removeService(serviceName);
     }
 
     return service;
@@ -1264,46 +1079,24 @@
 
   Jim.prototype.hasService = function(serviceName)
   {
-    return this.view.hasService(serviceName);
+    return this.controller.hasService(serviceName);
   };
 
   Jim.prototype.dispatch = function(instructionName, body, type, header)
   {
-    this.stack.push(new Instruction(instructionName, body, type, header));
-    this.flushStack();
-  };
-
-  Jim.prototype.flushStack = function()
-  {
-    if (this.stack.length == 0)
-    return;
-
-    if (this.isStackMode)
-    {
-      setTimeout(this.flushStack, 300);
-
-    } else {
-      var note = this.stack.shift();
-      //this.log('jim send instruction: ' + note.name);
-      this.dispatchObservers(note);
-      if (this.stack.length > 0)
-      setTimeout(this.flushStack, 300);
-    }
+    this.controller.dispatch(instructionName, body, type, header);
   };
 
   Jim.prototype.dispatchObservers = function(instruction)
   {
-    if (this.view != null)
+    if (this.controller != null)
     {
-      this.view.dispatchObservers(instruction);
+      this.controller.dispatchObservers(instruction);
     }
   };
 
-  Jim.prototype.view = null;
   Jim.prototype.controller = null;
   Jim.prototype.model = null;
-  Jim.prototype.stackMode = null;
-  Jim.prototype.stack = null;
   Jim.prototype.jimiesMap = null;
 
   Jim.log = function(obj)
