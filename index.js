@@ -19,50 +19,39 @@
 *  more infos https://github.com/awallef/askjim-node
 *
 */
-
-/*
-
-facade => Jim
-Command => task
-Process => work
-fork => jimi
-Jim.askJimi => sendMessage
-Jimi.askFather => sendMessage
-*/
-
 (function(scope) {
 
   /***
-  *     _______          __  .__  _____.__
-  *     \      \   _____/  |_|__|/ ____\__| ___________
-  *     /   |   \ /  _ \   __\  \   __\|  |/ __ \_  __ \
-  *    /    |    (  <_> )  | |  ||  |  |  \  ___/|  | \/
-  *    \____|__  /\____/|__| |__||__|  |__|\___  >__|
-  *            \/                              \/
+  *    ________  .__                      __         .__
+  *    \______ \ |__| _________________ _/  |_  ____ |  |__   ___________
+  *     |    |  \|  |/  ___/\____ \__  \\   __\/ ___\|  |  \_/ __ \_  __ \
+  *     |    `   \  |\___ \ |  |_> > __ \|  | \  \___|   Y  \  ___/|  | \/
+  *    /_______  /__/____  >|   __(____  /__|  \___  >___|  /\___  >__|
+  *            \/        \/ |__|       \/          \/     \/     \/
   */
-  function Notifier()
+  function Dispatcher()
   {
   }
 
-  Notifier.prototype.sendNotification = function(notificationName, body, type)
+  Dispatcher.prototype.dispatch = function(instructionName, body, type)
   {
-    if (this.facade)
+    if (this.jim)
     {
-      this.facade.sendNotification(notificationName, body, type);
+      this.jim.dispatch(instructionName, body, type);
     }
   };
 
-  Notifier.prototype.facade = null;
+  Dispatcher.prototype.jim = null;
 
   /***
-  *     _______          __  .__  _____.__               __  .__                  ___ ___                     .___
-  *     \      \   _____/  |_|__|/ ____\__| ____ _____ _/  |_|__| ____   ____    /   |   \   ____ _____     __| _/___________
-  *     /   |   \ /  _ \   __\  \   __\|  |/ ___\\__  \\   __\  |/  _ \ /    \  /    ~    \_/ __ \\__  \   / __ |/ __ \_  __ \
-  *    /    |    (  <_> )  | |  ||  |  |  \  \___ / __ \|  | |  (  <_> )   |  \ \    Y    /\  ___/ / __ \_/ /_/ \  ___/|  | \/
-  *    \____|__  /\____/|__| |__||__|  |__|\___  >____  /__| |__|\____/|___|  /  \___|_  /  \___  >____  /\____ |\___  >__|
-  *            \/                              \/     \/                    \/         \/       \/     \/      \/    \/
+  *    .___                 __                        __  .__                ___ ___                     .___
+  *    |   | ____   _______/  |________ __ __   _____/  |_|__| ____   ____  /   |   \   ____ _____     __| _/___________
+  *    |   |/    \ /  ___/\   __\_  __ \  |  \_/ ___\   __\  |/  _ \ /    \/    ~    \_/ __ \\__  \   / __ |/ __ \_  __ \
+  *    |   |   |  \\___ \  |  |  |  | \/  |  /\  \___|  | |  (  <_> )   |  \    Y    /\  ___/ / __ \_/ /_/ \  ___/|  | \/
+  *    |___|___|  /____  > |__|  |__|  |____/  \___  >__| |__|\____/|___|  /\___|_  /  \___  >____  /\____ |\___  >__|
+  *             \/     \/                          \/                    \/       \/       \/     \/      \/    \/
   */
-  function NotificationHeader(processName, pid, step, time)
+  function InstructionHeader(processName, pid, step, time)
   {
     this.processName = processName;
     this.pid = pid;
@@ -70,7 +59,7 @@ Jimi.askFather => sendMessage
     this.time = time;
   }
 
-  NotificationHeader.prototype.kill = function()
+  InstructionHeader.prototype.kill = function()
   {
     this.processName = null;
     this.pid = null;
@@ -78,20 +67,20 @@ Jimi.askFather => sendMessage
     this.step = null;
   };
 
-  NotificationHeader.prototype.processName = null;
-  NotificationHeader.prototype.pid = null;
-  NotificationHeader.prototype.time = null;
-  NotificationHeader.prototype.step = null;
+  InstructionHeader.prototype.processName = null;
+  InstructionHeader.prototype.pid = null;
+  InstructionHeader.prototype.time = null;
+  InstructionHeader.prototype.step = null;
 
   /***
-  *     _______          __  .__  _____.__               __  .__
-  *     \      \   _____/  |_|__|/ ____\__| ____ _____ _/  |_|__| ____   ____
-  *     /   |   \ /  _ \   __\  \   __\|  |/ ___\\__  \\   __\  |/  _ \ /    \
-  *    /    |    (  <_> )  | |  ||  |  |  \  \___ / __ \|  | |  (  <_> )   |  \
-  *    \____|__  /\____/|__| |__||__|  |__|\___  >____  /__| |__|\____/|___|  /
-  *            \/                              \/     \/                    \/
+  *    .___                 __                        __  .__
+  *    |   | ____   _______/  |________ __ __   _____/  |_|__| ____   ____
+  *    |   |/    \ /  ___/\   __\_  __ \  |  \_/ ___\   __\  |/  _ \ /    \
+  *    |   |   |  \\___ \  |  |  |  | \/  |  /\  \___|  | |  (  <_> )   |  \
+  *    |___|___|  /____  > |__|  |__|  |____/  \___  >__| |__|\____/|___|  /
+  *             \/     \/                          \/                    \/
   */
-  function Notification(name, body, type, header)
+  function Instruction(name, body, type, header)
   {
     this.name = name;
     this.body = body;
@@ -99,38 +88,38 @@ Jimi.askFather => sendMessage
     this.header = header;
   }
 
-  Notification.prototype.getHeader = function() {
+  Instruction.prototype.getHeader = function() {
     return this.header;
   };
 
-  Notification.prototype.setHeader = function(header) {
+  Instruction.prototype.setHeader = function(header) {
     this.header = header;
   };
 
-  Notification.prototype.getName = function() {
+  Instruction.prototype.getName = function() {
     return this.name;
   };
 
-  Notification.prototype.getBody = function() {
+  Instruction.prototype.getBody = function() {
     return this.body;
   };
 
-  Notification.prototype.setBody = function(body) {
+  Instruction.prototype.setBody = function(body) {
     this.body = body;
   };
 
-  Notification.prototype.getType = function() {
+  Instruction.prototype.getType = function() {
     return this.type;
   };
 
-  Notification.setType = function(type) {
+  Instruction.setType = function(type) {
     this.type = type;
   };
 
-  Notification.prototype.name = null;
-  Notification.prototype.body = null;
-  Notification.prototype.type = null;
-  Notification.prototype.header = null;
+  Instruction.prototype.name = null;
+  Instruction.prototype.body = null;
+  Instruction.prototype.type = null;
+  Instruction.prototype.header = null;
 
   /***
   *    ________ ___.
@@ -140,45 +129,45 @@ Jimi.askFather => sendMessage
   *    \_______  /___  /____  >\___  >__|    \_/  \___  >__|
   *            \/    \/     \/     \/                 \/
   */
-  function Observer(notifyMethod, notifyContext) {
-    this.setNotifyMethod(notifyMethod);
-    this.setNotifyContext(notifyContext);
+  function Observer(dispatchMethod, dispatchContext) {
+    this.setDispatchMethod(dispatchMethod);
+    this.setDispatchContext(dispatchContext);
   }
 
-  Observer.prototype = new Notifier;
+  Observer.prototype = new Dispatcher;
   Observer.prototype.constructor = Observer;
 
-  Observer.prototype.setNotifyMethod = function(notifyMethod)
+  Observer.prototype.setDispatchMethod = function(dispatchMethod)
   {
-    this.notify = notifyMethod;
+    this.dispatch = dispatchMethod;
   };
 
-  Observer.prototype.setNotifyContext = function(notifyContext)
+  Observer.prototype.setDispatchContext = function(dispatchContext)
   {
-    this.context = notifyContext;
+    this.context = dispatchContext;
   };
 
-  Observer.prototype.getNotifyMethod = function()
+  Observer.prototype.getDispatchMethod = function()
   {
-    return this.notify;
+    return this.dispatch;
   };
 
-  Observer.prototype.getNotifyContext = function()
+  Observer.prototype.getDispatchContext = function()
   {
     return this.context;
   };
 
-  Observer.prototype.notifyObserver = function(notification)
+  Observer.prototype.dispatchObserver = function(instruction)
   {
-    this.getNotifyMethod().call(this.getNotifyContext(), notification);
+    this.getDispatchMethod().call(this.getDispatchContext(), instruction);
   };
 
-  Observer.prototype.compareNotifyContext = function(object)
+  Observer.prototype.compareDispatchContext = function(object)
   {
     return object === this.context;
   };
 
-  Observer.prototype.notify = null;
+  Observer.prototype.dispatch = null;
   Observer.prototype.context = null;
 
   /***
@@ -197,7 +186,7 @@ Jimi.askFather => sendMessage
     }
   }
 
-  AbstractProxy.prototype = new Notifier;
+  AbstractProxy.prototype = new Dispatcher;
   AbstractProxy.prototype.constructor = AbstractProxy;
 
   AbstractProxy.prototype.getProxyName = function()
@@ -231,171 +220,159 @@ Jimi.askFather => sendMessage
   AbstractProxy.prototype.data = null;
 
   /***
-  *       _____ ___.             __                        __     _____             .___.__        __
-  *      /  _  \\_ |__   _______/  |_____________    _____/  |_  /     \   ____   __| _/|__|____ _/  |_  ___________
-  *     /  /_\  \| __ \ /  ___/\   __\_  __ \__  \ _/ ___\   __\/  \ /  \_/ __ \ / __ | |  \__  \\   __\/  _ \_  __ \
-  *    /    |    \ \_\ \\___ \  |  |  |  | \// __ \\  \___|  | /    Y    \  ___// /_/ | |  |/ __ \|  | (  <_> )  | \/
-  *    \____|__  /___  /____  > |__|  |__|  (____  /\___  >__| \____|__  /\___  >____ | |__(____  /__|  \____/|__|
-  *            \/    \/     \/                   \/     \/             \/     \/     \/         \/
+  *      _________                  .__
+  *     /   _____/ ______________  _|__| ____  ____
+  *     \_____  \_/ __ \_  __ \  \/ /  |/ ___\/ __ \
+  *     /        \  ___/|  | \/\   /|  \  \__\  ___/
+  *    /_______  /\___  >__|    \_/ |__|\___  >___  >
+  *            \/     \/                    \/    \/
   */
-  function AbstractMediator(mediatorName, viewComponent) {
-    this.mediatorName = mediatorName || this.constructor.NAME;
-    this.viewComponent = viewComponent;
+  function Service(serviceName) {
+    this.serviceName = serviceName || this.constructor.NAME;
   }
 
-  AbstractMediator.prototype = new Notifier;
-  AbstractMediator.prototype.constructor = AbstractMediator;
+  Service.prototype = new Dispatcher;
+  Service.prototype.constructor = Service;
 
-  AbstractMediator.prototype.getMediatorName = function()
+  Service.prototype.getServiceName = function()
   {
-    return this.mediatorName;
+    return this.serviceName;
   };
 
-  AbstractMediator.prototype.setViewComponent = function(viewComponent)
-  {
-    this.viewComponent = viewComponent;
-  };
-
-  AbstractMediator.prototype.getViewComponent = function()
-  {
-    return this.viewComponent;
-  };
-
-  AbstractMediator.prototype.listNotificationInterests = function()
+  Service.prototype.listInstructionInterests = function()
   {
     return [];
   };
 
-  AbstractMediator.prototype.handleNotification = function(notification)
+  Service.prototype.handleInstruction = function(instruction)
   {
     return;
   };
 
-  AbstractMediator.prototype.onRegister = function()
+  Service.prototype.onRegister = function()
   {
     return;
   };
 
-  AbstractMediator.prototype.onRemove = function()
+  Service.prototype.onRemove = function()
   {
     return;
   };
 
-  AbstractMediator.prototype.mediatorName = null;
-  AbstractMediator.prototype.viewComponent = null;
+  Service.prototype.serviceName = null;
 
-  AbstractMediator.NAME = "AbstractMediator";
+  Service.NAME = "Service";
 
 
   /***
-  *       _____ ___.             __                        __   _________                                           .___
-  *      /  _  \\_ |__   _______/  |_____________    _____/  |_ \_   ___ \  ____   _____   _____ _____    ____    __| _/
-  *     /  /_\  \| __ \ /  ___/\   __\_  __ \__  \ _/ ___\   __\/    \  \/ /  _ \ /     \ /     \\__  \  /    \  / __ |
-  *    /    |    \ \_\ \\___ \  |  |  |  | \// __ \\  \___|  |  \     \___(  <_> )  Y Y  \  Y Y  \/ __ \|   |  \/ /_/ |
-  *    \____|__  /___  /____  > |__|  |__|  (____  /\___  >__|   \______  /\____/|__|_|  /__|_|  (____  /___|  /\____ |
-  *            \/    \/     \/                   \/     \/              \/             \/      \/     \/     \/      \/
+  *    ___________              __
+  *    \__    ___/____    _____|  | __
+  *      |    |  \__  \  /  ___/  |/ /
+  *      |    |   / __ \_\___ \|    <
+  *      |____|  (____  /____  >__|_ \
+  *                   \/     \/     \/
   */
-  function AbstractCommand(notification)
+  function Task(instruction)
   {
-    this.notification = notification;
+    this.instruction = instruction;
   }
 
-  AbstractCommand.prototype = new Notifier;
-  AbstractCommand.prototype.constructor = AbstractCommand;
+  Task.prototype = new Dispatcher;
+  Task.prototype.constructor = Task;
 
-  AbstractCommand.prototype.execute = function(notification)
+  Task.prototype.execute = function(instruction)
   {
 
   };
 
-  AbstractCommand.prototype.nextCommand = function()
+  Task.prototype.nextTask = function()
   {
-    if (this.notification)
+    if (this.instruction)
     {
-      if (this.notification.header)
+      if (this.instruction.header)
       {
-        if (this.notification.header.processName)
-        this.facade.nextCommand(this.notification);
+        if (this.instruction.header.processName)
+        this.jim.nextTask(this.instruction);
       }
     }
 
     this.kill();
   };
 
-  AbstractCommand.prototype.kill = function()
+  Task.prototype.kill = function()
   {
-    this.facade = null;
-    this.notification = null;
+    this.jim = null;
+    this.instruction = null;
     this.execute = null;
   };
 
-  AbstractCommand.prototype.notification = null;
+  Task.prototype.instruction = null;
 
   /***
-  *       _____ ___.             __                        __   _________                  .__
-  *      /  _  \\_ |__   _______/  |_____________    _____/  |_/   _____/ ______________  _|__| ____  ____
-  *     /  /_\  \| __ \ /  ___/\   __\_  __ \__  \ _/ ___\   __\_____  \_/ __ \_  __ \  \/ /  |/ ___\/ __ \
-  *    /    |    \ \_\ \\___ \  |  |  |  | \// __ \\  \___|  | /        \  ___/|  | \/\   /|  \  \__\  ___/
-  *    \____|__  /___  /____  > |__|  |__|  (____  /\___  >__|/_______  /\___  >__|    \_/ |__|\___  >___  >
-  *            \/    \/     \/                   \/     \/            \/     \/                    \/    \/
+  *         ____.__        .__
+  *        |    |__| _____ |__|
+  *        |    |  |/     \|  |
+  *    /\__|    |  |  Y Y  \  |
+  *    \________|__|__|_|  /__|
+  *                      \/
   */
-  function AbstractService(facade, name, configObject)
+  function Jimi(jim, name, configObject)
   {
-    this.facade = facade;
+    this.jim = jim;
     this.name = name;
-    this.initializeService(configObject);
+    this.initializeJimi(configObject);
   }
 
-  AbstractService.prototype = new Notifier;
-  AbstractService.prototype.constructor = AbstractService;
+  Jimi.prototype = new Dispatcher;
+  Jimi.prototype.constructor = Jimi;
 
-  AbstractService.prototype.initializeService = function(configObject)
+  Jimi.prototype.initializeJimi = function(configObject)
   {
     this.initProxies(configObject);
-    this.initMediators(configObject);
-    this.initCommands(configObject);
+    this.initServices(configObject);
+    this.initTasks(configObject);
     this.initProcesses(configObject);
 
     this.runInstall(configObject);
   };
 
-  AbstractService.prototype.initProxies = function(configObject) {
+  Jimi.prototype.initProxies = function(configObject) {
   };
-  AbstractService.prototype.initMediators = function(configObject) {
+  Jimi.prototype.initServices = function(configObject) {
   };
-  AbstractService.prototype.initCommands = function(configObject) {
+  Jimi.prototype.initTasks = function(configObject) {
   };
-  AbstractService.prototype.initProcesses = function(configObject) {
-  };
-
-  AbstractService.prototype.runInstall = function(configObject) {
+  Jimi.prototype.initProcesses = function(configObject) {
   };
 
+  Jimi.prototype.runInstall = function(configObject) {
+  };
 
-  AbstractService.prototype.removeService = function(  )
+
+  Jimi.prototype.removeJimi = function(  )
   {
     this.removeProxies(  );
-    this.removeMediators(  );
-    this.removeCommands(  );
+    this.removeServices(  );
+    this.removeTasks(  );
     this.removeProcesses(  );
 
     this.runUninstall(  );
   };
 
-  AbstractService.prototype.removeProxies = function(  ) {
+  Jimi.prototype.removeProxies = function(  ) {
   };
-  AbstractService.prototype.removeMediators = function(  ) {
+  Jimi.prototype.removeServices = function(  ) {
   };
-  AbstractService.prototype.removeCommands = function(  ) {
+  Jimi.prototype.removeTasks = function(  ) {
   };
-  AbstractService.prototype.removeProcesses = function(  ) {
-  };
-
-  AbstractService.prototype.runUninstall = function(  ) {
+  Jimi.prototype.removeProcesses = function(  ) {
   };
 
-  AbstractService.prototype.name = null;
-  AbstractService.prototype.facade = null;
+  Jimi.prototype.runUninstall = function(  ) {
+  };
+
+  Jimi.prototype.name = null;
+  Jimi.prototype.jim = null;
 
   /***
   *    __________
@@ -449,29 +426,29 @@ Jimi.askFather => sendMessage
     {
       this.processMap[processName].tasksArray = this.extractTasksFromProcess(processName);
       this.processMap[processName].step = 0;
-      this.facade.log('Processor -> start ' + processName);
+      this.jim.log('Processor -> start ' + processName);
       this.activeProcesses[ this.processMap[processName].pid ] = this.processMap[processName];
       this._exec(processName, body, type);
     } else {
-      this.facade.log("! Processor -> process " + processName + " dosen't exist");
+      this.jim.log("! Processor -> process " + processName + " dosen't exist");
     }
   };
 
-  Processor.prototype.nextCommand = function(notification)
+  Processor.prototype.nextTask = function(instruction)
   {
-    var processName = notification.header.processName;
+    var processName = instruction.header.processName;
     if (this.processMap.hasOwnProperty(processName))
     {
       if (!this.processMap[processName].isOver())
       {
         this.processMap[processName].step++;
-        var body = notification.getBody();
-        var type = notification.getType();
-        notification.header.kill();
-        notification.header = null;
-        notification.body = null;
-        notification.type = null;
-        notification = null;
+        var body = instruction.getBody();
+        var type = instruction.getType();
+        instruction.header.kill();
+        instruction.header = null;
+        instruction.body = null;
+        instruction.type = null;
+        instruction = null;
         this._exec(processName, body, type);
         processName = null;
         body = null;
@@ -479,11 +456,11 @@ Jimi.askFather => sendMessage
       } else {
         this.processMap[processName].state = Process.READY;
         delete this.activeProcesses[ this.processMap[processName].pid ];
-        this.facade.log("Processor -> process " + processName + " is Finished");
+        this.jim.log("Processor -> process " + processName + " is Finished");
       }
 
     } else {
-      this.facade.log("! Processor -> process " + processName + " dosen't exist");
+      this.jim.log("! Processor -> process " + processName + " dosen't exist");
     }
   };
 
@@ -492,9 +469,9 @@ Jimi.askFather => sendMessage
     var process = this.processMap[processName];
     process.state = Process.RUNNING;
     var task = process.getCurrentTask();
-    var header = new NotificationHeader(processName, process.pid, process.step, new Date());
-    this.facade.log('Processor -> _exec task: ' + task);
-    this.facade.sendNotification(task, body, type, header);
+    var header = new InstructionHeader(processName, process.pid, process.step, new Date());
+    this.jim.log('Processor -> _exec task: ' + task);
+    this.jim.dispatch(task, body, type, header);
 
     process = null;
     //task = null;
@@ -504,7 +481,7 @@ Jimi.askFather => sendMessage
   };
 
   Processor.prototype.processMap = null;
-  Processor.prototype.facade = null;
+  Processor.prototype.jim = null;
   Processor.prototype.activeProcesses = null;
 
   Processor.getNewProcessId = function()
@@ -525,7 +502,7 @@ Jimi.askFather => sendMessage
   function Sequencer() {
   }
 
-  Sequencer.prototype.facade = null;
+  Sequencer.prototype.jim = null;
   Sequencer.prototype._cronStack = {};
   Sequencer.prototype._animationFrameStack = {};
   Sequencer.prototype._runningFrameStack = [];
@@ -545,11 +522,11 @@ Jimi.askFather => sendMessage
 
   Sequencer.prototype._exec = function(label, body, type)
   {
-    if (this.facade.controller.processor.hasProcess(label))
+    if (this.jim.controller.processor.hasProcess(label))
     {
-      this.facade.controller.processor.execute(label, body, type);
+      this.jim.controller.processor.execute(label, body, type);
     } else {
-      this.facade.sendNotification(label, body, type);
+      this.jim.dispatch(label, body, type);
     }
   };
 
@@ -578,7 +555,7 @@ Jimi.askFather => sendMessage
     }
     if (!this._isFrameLoopRunnig)
     {
-      this.facade.log('Start Animation Frame loop');
+      this.jim.log('Start Animation Frame loop');
       this._isFrameLoopRunnig = true;
       this.loop();
     }
@@ -600,7 +577,7 @@ Jimi.askFather => sendMessage
       this._runningFrameStack = newStack;
 
       if (this._runningFrameStack.length == 0) {
-        this.facade.log('Stop Animation Frame loop');
+        this.jim.log('Stop Animation Frame loop');
         this._isFrameLoopRunnig = false;
       }
 
@@ -617,7 +594,7 @@ Jimi.askFather => sendMessage
     for (var i in this._cronStack)
     {
       this._runningFrameStack = [];
-      this.facade.log('Stop Animation Frame loop');
+      this.jim.log('Stop Animation Frame loop');
       this._isFrameLoopRunnig = false;
       if (andDestroy)
       {
@@ -812,27 +789,27 @@ Jimi.askFather => sendMessage
   */
   function View( )
   {
-    this.mediatorMap = [];
+    this.serviceMap = [];
     this.observerMap = [];
   }
 
-  View.prototype.registerObserver = function(notificationName, observer)
+  View.prototype.registerObserver = function(instructionName, observer)
   {
-    if (this.observerMap[notificationName] != null)
+    if (this.observerMap[instructionName] != null)
     {
-      this.observerMap[notificationName].push(observer);
+      this.observerMap[instructionName].push(observer);
     }
     else
     {
-      this.observerMap[notificationName] = [observer];
+      this.observerMap[instructionName] = [observer];
     }
   };
 
-  View.prototype.notifyObservers = function(notification)
+  View.prototype.dispatchObservers = function(instruction)
   {
-    if (this.observerMap[notification.getName()] != null)
+    if (this.observerMap[instruction.getName()] != null)
     {
-      var observers_ref = this.observerMap[notification.getName()], observers = [], observer
+      var observers_ref = this.observerMap[instruction.getName()], observers = [], observer
 
       for (var i = 0; i < observers_ref.length; i++)
       {
@@ -843,19 +820,19 @@ Jimi.askFather => sendMessage
       for (var i = 0; i < observers.length; i++)
       {
         observer = observers[i];
-        observer.notifyObserver(notification);
+        observer.dispatchObserver(instruction);
       }
     }
 
 
   };
 
-  View.prototype.removeObserver = function(notificationName, notifyContext)
+  View.prototype.removeObserver = function(instructionName, dispatchContext)
   {
-    var observers = this.observerMap[notificationName];
+    var observers = this.observerMap[instructionName];
     for (var i = 0; i < observers.length; i++)
     {
-      if (observers[i].compareNotifyContext(notifyContext) == true)
+      if (observers[i].compareDispatchContext(dispatchContext) == true)
       {
         observers.splice(i, 1);
         break;
@@ -864,74 +841,74 @@ Jimi.askFather => sendMessage
 
     if (observers.length == 0)
     {
-      delete this.observerMap[notificationName];
+      delete this.observerMap[instructionName];
     }
   };
 
-  View.prototype.registerMediator = function(mediator)
+  View.prototype.registerService = function(service)
   {
-    if (this.mediatorMap[mediator.getMediatorName()] != null)
+    if (this.serviceMap[service.getServiceName()] != null)
     {
       return;
     }
 
-    mediator.facade = this.facade;
-    // register the mediator for retrieval by name
-    this.mediatorMap[mediator.getMediatorName()] = mediator;
+    service.jim = this.jim;
+    // register the service for retrieval by name
+    this.serviceMap[service.getServiceName()] = service;
 
-    // get notification interests if any
-    var interests = mediator.listNotificationInterests();
+    // get instruction interests if any
+    var interests = service.listInstructionInterests();
 
-    // register mediator as an observer for each notification
+    // register service as an observer for each instruction
     if (interests.length > 0)
     {
-      // create observer referencing this mediators handleNotification method
-      var observer = new Observer(mediator.handleNotification, mediator);
+      // create observer referencing this services handleInstruction method
+      var observer = new Observer(service.handleInstruction, service);
       for (var i = 0; i < interests.length; i++)
       {
         this.registerObserver(interests[i], observer);
       }
     }
 
-    mediator.onRegister();
+    service.onRegister();
   };
 
-  View.prototype.retrieveMediator = function(mediatorName)
+  View.prototype.retrieveService = function(serviceName)
   {
-    return this.mediatorMap[mediatorName];
+    return this.serviceMap[serviceName];
   };
 
-  View.prototype.removeMediator = function(mediatorName)
+  View.prototype.removeService = function(serviceName)
   {
-    var mediator = this.mediatorMap[mediatorName];
-    if (mediator)
+    var service = this.serviceMap[serviceName];
+    if (service)
     {
-      // for every notification the mediator is interested in...
-      var interests = mediator.listNotificationInterests();
+      // for every instruction the service is interested in...
+      var interests = service.listInstructionInterests();
       for (var i = 0; i < interests.length; i++)
       {
-        // remove the observer linking the mediator to the notification
+        // remove the observer linking the service to the instruction
         // interest
-        this.removeObserver(interests[i], mediator);
+        this.removeObserver(interests[i], service);
       }
 
-      // remove the mediator from the map
-      delete this.mediatorMap[mediatorName];
+      // remove the service from the map
+      delete this.serviceMap[serviceName];
 
-      // alert the mediator that it has been removed
-      mediator.onRemove();
+      // alert the service that it has been removed
+      service.onRemove();
     }
 
-    return mediator;
+    return service;
   };
 
-  View.prototype.hasMediator = function(mediatorName)
+  View.prototype.hasService = function(serviceName)
   {
-    return this.mediatorMap[mediatorName] != null;
+    return this.serviceMap[serviceName] != null;
   };
 
-  View.prototype.facade = null;
-  View.prototype.mediatorMap = null;
+  View.prototype.jim = null;
+  View.prototype.serviceMap = null;
   View.prototype.observerMap = null;
 
   /***
@@ -949,7 +926,7 @@ Jimi.askFather => sendMessage
 
   Model.prototype.registerProxy = function(proxy)
   {
-    proxy.facade = this.facade;
+    proxy.jim = this.jim;
     this.proxyMap[proxy.getProxyName()] = proxy;
     proxy.onRegister();
   };
@@ -976,7 +953,7 @@ Jimi.askFather => sendMessage
     return proxy;
   };
 
-  Model.prototype.facade = null;
+  Model.prototype.jim = null;
   Model.prototype.proxyMap = null;
   Model.prototype.ressources = null;
 
@@ -990,260 +967,260 @@ Jimi.askFather => sendMessage
   */
   function Controller( )
   {
-    this.commandMap = [];
+    this.taskMap = [];
     this.processor = new Processor();
     this.sequencer = new Sequencer();
     this.eventHandler = new EventHandler();
   }
 
-  Controller.prototype.executeCommand = function(note)
+  Controller.prototype.executeTask = function(note)
   {
-    var commandClassRef = this.commandMap[note.getName()];
-    if (commandClassRef == null)
+    var taskClassRef = this.taskMap[note.getName()];
+    if (taskClassRef == null)
     return;
 
-    var commandInstance = new commandClassRef(note);
-    commandInstance.facade = this.facade;
-    commandInstance.notification = note;
-    commandInstance.execute(note);
+    var taskInstance = new taskClassRef(note);
+    taskInstance.jim = this.jim;
+    taskInstance.instruction = note;
+    taskInstance.execute(note);
   };
 
-  Controller.prototype.registerCommand = function(notificationName, commandClassRef)
+  Controller.prototype.registerTask = function(instructionName, taskClassRef)
   {
-    if (this.commandMap[notificationName] == null)
+    if (this.taskMap[instructionName] == null)
     {
-      this.view.registerObserver(notificationName, new Observer(this.executeCommand, this));
+      this.view.registerObserver(instructionName, new Observer(this.executeTask, this));
     }
 
-    this.commandMap[notificationName] = commandClassRef;
+    this.taskMap[instructionName] = taskClassRef;
   };
 
-  Controller.prototype.hasCommand = function(notificationName)
+  Controller.prototype.hasTask = function(instructionName)
   {
-    return this.commandMap[notificationName] != null;
+    return this.taskMap[instructionName] != null;
   };
 
-  Controller.prototype.removeCommand = function(notificationName)
+  Controller.prototype.removeTask = function(instructionName)
   {
-    if (this.hasCommand(notificationName))
+    if (this.hasTask(instructionName))
     {
-      this.view.removeObserver(notificationName, this);
-      this.commandMap[notificationName] = null;
+      this.view.removeObserver(instructionName, this);
+      this.taskMap[instructionName] = null;
     }
   };
 
-  Controller.prototype.facade = null;
+  Controller.prototype.jim = null;
   Controller.prototype.view = null;
-  Controller.prototype.commandMap = null;
+  Controller.prototype.taskMap = null;
   Controller.prototype.processor = null;
   Controller.prototype.sequencer = null;
   Controller.prototype.eventHandler = null;
 
   /***
-  *       _____ ___.             __                        __ ___________                         .___
-  *      /  _  \\_ |__   _______/  |_____________    _____/  |\_   _____/____    ____ _____     __| _/____
-  *     /  /_\  \| __ \ /  ___/\   __\_  __ \__  \ _/ ___\   __\    __) \__  \ _/ ___\\__  \   / __ |/ __ \
-  *    /    |    \ \_\ \\___ \  |  |  |  | \// __ \\  \___|  | |     \   / __ \\  \___ / __ \_/ /_/ \  ___/
-  *    \____|__  /___  /____  > |__|  |__|  (____  /\___  >__| \___  /  (____  /\___  >____  /\____ |\___  >
-  *            \/    \/     \/                   \/     \/         \/        \/     \/     \/      \/    \/
+  *         ____.__
+  *        |    |__| _____
+  *        |    |  |/     \
+  *    /\__|    |  |  Y Y  \
+  *    \________|__|__|_|  /
+  *                      \/
   */
-  function AbstractFacade( )
+  function Jim( )
   {
     this._initializeFacade(  );
   }
 
-  AbstractFacade.prototype.log = function(obj)
+  Jim.prototype.log = function(obj)
   {
-    AbstractFacade.log(obj);
+    Jim.log(obj);
   };
 
-  AbstractFacade.prototype.goTo = function(label, body, type)
+  Jim.prototype.goTo = function(label, body, type)
   {
     this.controller.sequencer.goTo(label, body, type);
   };
 
   // Event Handler
-  AbstractFacade.prototype.doesHandleEvent = function(labelOrName)
+  Jim.prototype.doesHandleEvent = function(labelOrName)
   {
     return this.controller.eventHandler.doesHandleEvent( labelOrName );
   };
 
-  AbstractFacade.prototype.registerEventHandler = function(labelOrName, element, event, note, useCapture, stopPropagation)
+  Jim.prototype.registerEventHandler = function(labelOrName, element, event, note, useCapture, stopPropagation)
   {
     this.controller.eventHandler.registerEventHandler(labelOrName, element, event, note, useCapture, stopPropagation);
   };
 
-  AbstractFacade.prototype.removeEventHandler = function(labelOrName)
+  Jim.prototype.removeEventHandler = function(labelOrName)
   {
     this.controller.eventHandler.removeEventHandler(labelOrName);
   };
   // Animation Frame JOB
-  AbstractFacade.prototype.registerAnimationFrameJob = function(labelOrName, note)
+  Jim.prototype.registerAnimationFrameJob = function(labelOrName, note)
   {
     this.controller.sequencer.registerAnimationFrameJob(labelOrName, note);
   };
-  AbstractFacade.prototype.startAnimationFrameJob = function(labelOrName)
+  Jim.prototype.startAnimationFrameJob = function(labelOrName)
   {
     this.controller.sequencer.startAnimationFrameJob(labelOrName);
   };
-  AbstractFacade.prototype.stopAnimationFrameJob = function(labelOrName, andDestroy)
+  Jim.prototype.stopAnimationFrameJob = function(labelOrName, andDestroy)
   {
     this.controller.sequencer.stopAnimationFrameJob(labelOrName, andDestroy);
   };
-  AbstractFacade.prototype.stopAllAnimationFrameJob = function(andDestroy)
+  Jim.prototype.stopAllAnimationFrameJob = function(andDestroy)
   {
     this.controller.sequencer.stopAllAnimationFrameJob(andDestroy);
   };
 
   // CRON JOB
-  AbstractFacade.prototype.registerCronJob = function(labelOrName, delay, note, stopCount)
+  Jim.prototype.registerCronJob = function(labelOrName, delay, note, stopCount)
   {
     this.controller.sequencer.registerCronJob(labelOrName, delay, note, stopCount);
   };
-  AbstractFacade.prototype.startCronJob = function(labelOrName)
+  Jim.prototype.startCronJob = function(labelOrName)
   {
     this.controller.sequencer.startCronJob(labelOrName);
   };
-  AbstractFacade.prototype.stopCronJob = function(labelOrName, andDestroy)
+  Jim.prototype.stopCronJob = function(labelOrName, andDestroy)
   {
     this.controller.sequencer.stopCronJob(labelOrName, andDestroy);
   };
-  AbstractFacade.prototype.stopAllCronJob = function(andDestroy)
+  Jim.prototype.stopAllCronJob = function(andDestroy)
   {
     this.controller.sequencer.stopAllCronJob(andDestroy);
   };
 
-  AbstractFacade.prototype._initializeFacade = function()
+  Jim.prototype._initializeFacade = function()
   {
     this.view = new View();
     this.controller = new Controller();
     this.model = new Model();
 
-    this.view.facade = this;
-    this.controller.facade = this;
+    this.view.jim = this;
+    this.controller.jim = this;
     this.controller.view = this.view;
-    this.controller.processor.facade = this;
-    this.controller.sequencer.facade = this;
-    this.controller.eventHandler.facade = this;
-    this.model.facade = this;
+    this.controller.processor.jim = this;
+    this.controller.sequencer.jim = this;
+    this.controller.eventHandler.jim = this;
+    this.model.jim = this;
 
     this.stackMode = false;
     this.stack = [];
 
-    this.servicesMap = {};
+    this.jimiesMap = {};
 
   };
 
-  AbstractFacade.prototype.init = function(configObject)
+  Jim.prototype.init = function(configObject)
   {
-    this.initServices(configObject);
+    this.initJimies(configObject);
     this.initRessources(configObject);
     this.initProxies(configObject);
-    this.initMediators(configObject);
-    this.initCommands(configObject);
+    this.initServices(configObject);
+    this.initTasks(configObject);
     this.initProcesses(configObject);
     this.initHandlers(configObject);
     this.initSequences(configObject);
     this.bootstrap(configObject);
   };
 
-  AbstractFacade.prototype.initRessources = function(configObject) {
+  Jim.prototype.initRessources = function(configObject) {
   };
-  AbstractFacade.prototype.initProxies = function(configObject) {
+  Jim.prototype.initProxies = function(configObject) {
   };
-  AbstractFacade.prototype.initMediators = function(configObject) {
+  Jim.prototype.initServices = function(configObject) {
   };
-  AbstractFacade.prototype.initCommands = function(configObject) {
+  Jim.prototype.initTasks = function(configObject) {
   };
-  AbstractFacade.prototype.initProcesses = function(configObject) {
+  Jim.prototype.initProcesses = function(configObject) {
   };
-  AbstractFacade.prototype.initServices = function(configObject) {
+  Jim.prototype.initJimies = function(configObject) {
   };
-  AbstractFacade.prototype.initHandlers = function(configObject) {
+  Jim.prototype.initHandlers = function(configObject) {
   };
-  AbstractFacade.prototype.initSequences = function(configObject) {
+  Jim.prototype.initSequences = function(configObject) {
   };
-  AbstractFacade.prototype.bootstrap = function(configObject) {
+  Jim.prototype.bootstrap = function(configObject) {
   };
 
   // SERVICES
-  AbstractFacade.prototype.registerService = function(name, serviceClass, configObject)
+  Jim.prototype.registerJimi = function(name, jimiClass, configObject)
   {
-    if (!this.servicesMap.hasOwnProperty(name))
+    if (!this.jimiesMap.hasOwnProperty(name))
     {
-      this.servicesMap[ name ] = new serviceClass(this, name, configObject);
-      this.log('Service ' + name + ' has been added to your Application');
+      this.jimiesMap[ name ] = new jimiClass(this, name, configObject);
+      this.log('Jimi ' + name + ' has been added to your Application');
     }
   };
 
-  AbstractFacade.prototype.removeService = function(name)
+  Jim.prototype.removeJimi = function(name)
   {
-    if (this.servicesMap.hasOwnProperty(name))
+    if (this.jimiesMap.hasOwnProperty(name))
     {
-      this.servicesMap[ name ].removeService();
-      delete this.servicesMap[ name ];
+      this.jimiesMap[ name ].removeJimi();
+      delete this.jimiesMap[ name ];
     }
   };
 
   //PROCESSOR SHORT CUTS
-  AbstractFacade.prototype.registerProcess = function(processName, tasksArray)
+  Jim.prototype.registerProcess = function(processName, tasksArray)
   {
     this.controller.processor.registerProcess(processName, tasksArray);
   };
 
-  AbstractFacade.prototype.removeProcess = function(processName)
+  Jim.prototype.removeProcess = function(processName)
   {
     this.controller.processor.removeProcess(processName);
   };
 
-  AbstractFacade.prototype.execute = function(processName, body, type)
+  Jim.prototype.execute = function(processName, body, type)
   {
     this.controller.processor.execute(processName, body, type);
   };
 
-  AbstractFacade.prototype.nextCommand = function(notification)
+  Jim.prototype.nextTask = function(instruction)
   {
-    this.controller.processor.nextCommand(notification);
+    this.controller.processor.nextTask(instruction);
   };
 
   // CONTROLLER SHORT CUTS
-  AbstractFacade.prototype.registerCommand = function(notificationName, commandClassRef)
+  Jim.prototype.registerTask = function(instructionName, taskClassRef)
   {
-    this.controller.registerCommand(notificationName, commandClassRef);
+    this.controller.registerTask(instructionName, taskClassRef);
   };
 
-  AbstractFacade.prototype.removeCommand = function(notificationName)
+  Jim.prototype.removeTask = function(instructionName)
   {
-    this.controller.removeCommand(notificationName);
+    this.controller.removeTask(instructionName);
   };
 
-  AbstractFacade.prototype.hasCommand = function(notificationName)
+  Jim.prototype.hasTask = function(instructionName)
   {
-    return this.controller.hasCommand(notificationName);
+    return this.controller.hasTask(instructionName);
   };
 
   // MODEL SHORT CUTS
-  AbstractFacade.prototype.getRessource = function(name)
+  Jim.prototype.getRessource = function(name)
   {
     return this.model.ressources[name];
   };
 
-  AbstractFacade.prototype.setRessource = function(name, obj)
+  Jim.prototype.setRessource = function(name, obj)
   {
     this.model.ressources[name] = obj;
   };
 
-  AbstractFacade.prototype.registerProxy = function(proxy)
+  Jim.prototype.registerProxy = function(proxy)
   {
     this.model.registerProxy(proxy);
   };
 
-  AbstractFacade.prototype.retrieveProxy = function(proxyName)
+  Jim.prototype.retrieveProxy = function(proxyName)
   {
     return this.model.retrieveProxy(proxyName);
   };
 
-  AbstractFacade.prototype.removeProxy = function(proxyName)
+  Jim.prototype.removeProxy = function(proxyName)
   {
     var proxy = null;
     if (this.model != null)
@@ -1254,49 +1231,49 @@ Jimi.askFather => sendMessage
     return proxy;
   };
 
-  AbstractFacade.prototype.hasProxy = function(proxyName)
+  Jim.prototype.hasProxy = function(proxyName)
   {
     return this.model.hasProxy(proxyName);
   };
 
   // VIEW SHORT CUTS
-  AbstractFacade.prototype.registerMediator = function(mediator)
+  Jim.prototype.registerService = function(service)
   {
     if (this.view != null)
     {
-      this.view.registerMediator(mediator);
-      this.log('Mediator ' + mediator.mediatorName + ' has been registered');
+      this.view.registerService(service);
+      this.log('Service ' + service.serviceName + ' has been registered');
     }
   };
 
-  AbstractFacade.prototype.retrieveMediator = function(mediatorName)
+  Jim.prototype.retrieveService = function(serviceName)
   {
-    return this.view.retrieveMediator(mediatorName);
+    return this.view.retrieveService(serviceName);
   };
 
-  AbstractFacade.prototype.removeMediator = function(mediatorName)
+  Jim.prototype.removeService = function(serviceName)
   {
-    var mediator = null;
+    var service = null;
     if (this.view != null)
     {
-      mediator = this.view.removeMediator(mediatorName);
+      service = this.view.removeService(serviceName);
     }
 
-    return mediator;
+    return service;
   };
 
-  AbstractFacade.prototype.hasMediator = function(mediatorName)
+  Jim.prototype.hasService = function(serviceName)
   {
-    return this.view.hasMediator(mediatorName);
+    return this.view.hasService(serviceName);
   };
 
-  AbstractFacade.prototype.sendNotification = function(notificationName, body, type, header)
+  Jim.prototype.dispatch = function(instructionName, body, type, header)
   {
-    this.stack.push(new Notification(notificationName, body, type, header));
+    this.stack.push(new Instruction(instructionName, body, type, header));
     this.flushStack();
   };
 
-  AbstractFacade.prototype.flushStack = function()
+  Jim.prototype.flushStack = function()
   {
     if (this.stack.length == 0)
     return;
@@ -1307,51 +1284,50 @@ Jimi.askFather => sendMessage
 
     } else {
       var note = this.stack.shift();
-      //this.log('facade send notification: ' + note.name);
-      this.notifyObservers(note);
+      //this.log('jim send instruction: ' + note.name);
+      this.dispatchObservers(note);
       if (this.stack.length > 0)
       setTimeout(this.flushStack, 300);
     }
   };
 
-  AbstractFacade.prototype.notifyObservers = function(notification)
+  Jim.prototype.dispatchObservers = function(instruction)
   {
     if (this.view != null)
     {
-      this.view.notifyObservers(notification);
+      this.view.dispatchObservers(instruction);
     }
   };
 
-  AbstractFacade.prototype.view = null;
-  AbstractFacade.prototype.controller = null;
-  AbstractFacade.prototype.model = null;
-  AbstractFacade.prototype.stackMode = null;
-  AbstractFacade.prototype.stack = null;
-  AbstractFacade.prototype.servicesMap = null;
+  Jim.prototype.view = null;
+  Jim.prototype.controller = null;
+  Jim.prototype.model = null;
+  Jim.prototype.stackMode = null;
+  Jim.prototype.stack = null;
+  Jim.prototype.jimiesMap = null;
 
-  AbstractFacade.log = function(obj)
+  Jim.log = function(obj)
   {
-    if(AbstractFacade.isDebug) console.log(obj);
+    if(Jim.isDebug) console.log(obj);
   }
 
-  AbstractFacade.isDebug = true;
+  Jim.isDebug = true;
 
   /***
-  *    ___________                             __
-  *    \_   _____/__  _________   ____________/  |_
-  *     |    __)_\  \/  /\____ \ /  _ \_  __ \   __\
-  *     |        \>    < |  |_> >  <_> )  | \/|  |
-  *    /_______  /__/\_ \|   __/ \____/|__|   |__|
-  *            \/      \/|__|
+  *                                         __
+  *      ____ ___  _________   ____________/  |_  ______
+  *    _/ __ \\  \/  /\____ \ /  _ \_  __ \   __\/  ___/
+  *    \  ___/ >    < |  |_> >  <_> )  | \/|  |  \___ \
+  *     \___  >__/\_ \|   __/ \____/|__|   |__| /____  >
+  *         \/      \/|__|                           \/
   */
-
   module.exports = {
     AbstractProxy,
-    AbstractMediator,
-    AbstractCommand,
-    AbstractFacade,
-    AbstractService,
-    Notification
+    Service,
+    Task,
+    Jim,
+    Jimi,
+    Instruction
   };
 
 })(this); // the 'this' parameter will resolve to global scope in all environments
