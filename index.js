@@ -162,6 +162,14 @@ Dispatcher.prototype.dispatch = function(instructionName, body, type)
   }
 };
 
+Dispatcher.prototype.ask = function(label, body, type)
+{
+  if (this.jim)
+  {
+    this.jim.ask(label, body, type);
+  }
+};
+
 Dispatcher.prototype.jim = null;
 
 /***
