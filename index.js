@@ -1156,24 +1156,21 @@ const { fork } = require('child_process');
   };
 
   // REGISTRY
-  // JIMI
   Jim.prototype.register = function(type, name, obj)
   {
-    if (!this.registryMap.hasOwnProperty(type))
+    let key = type + '.' + name;
+    if (!this.registryMap.hasOwnProperty(key))
     {
-      this.registryMap[type] = {};
-      if (!this.registryMap[type].hasOwnProperty(name))
-      {
-        this.registryMap[type][name] = obj;
-      }
+      this.registryMap[key] = obj;
     }
   };
 
   Jim.prototype.remove = function(type, name)
   {
-    if ( this.registryMap.hasOwnProperty(type) && this.registryMap[type].hasOwnProperty(name))
+    let key = type + '.' + name;
+    if ( this.registryMap.hasOwnProperty(key))
     {
-      delete this.registryMap[type][name];
+      delete this.registryMap[key];
     }
   };
 
