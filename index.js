@@ -449,6 +449,8 @@ Processor.prototype.activeProcesses = null;
 
 Processor.getNewProcessId = function()
 {
+  if (Processor.lastProcessId == Number.MAX_VALUE)
+  Processor.lastProcessId = 0;
   return Processor.lastProcessId++;
 };
 
