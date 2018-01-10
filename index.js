@@ -887,7 +887,7 @@ Jim.prototype._initialize = function(parentProcess)
   if(parentProcess)
   {
     this.parentProcess = parentProcess;
-    this.parentProcess.on('message', this.handleForkMessage)
+    this.parentProcess.on('message', this.handleForkMessage.bind(this))
   }
 };
 
@@ -942,7 +942,7 @@ Jim.prototype.registerFork = function(name, path)
   if (!this.forksMap.hasOwnProperty(name))
   {
     this.forksMap[ name ] = fork(path);
-    this.forksMap[ name ].on('message', this.handleForkMessage);
+    this.forksMap[ name ].on('message', this.handleForkMessage.bind(this));
     this.log('Fork: ' + name + ' (child process) @ '+ path +' has been added to your Application');
   }
 };
