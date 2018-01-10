@@ -910,9 +910,9 @@ Jim.prototype.askParent = function(label, body, type)
 
 Jim.prototype.askFork = function(name, label, body, type)
 {
-  if (this.forkMap.hasOwnProperty(name))
+  if (this.forksMap.hasOwnProperty(name))
   {
-    this.forkMap[ name ].send({label, body, type});
+    this.forksMap[ name ].send({label, body, type});
   }
 };
 
@@ -939,20 +939,20 @@ Jim.prototype.handleForkMessage = function(msg)
 
 Jim.prototype.registerFork = function(name, path)
 {
-  if (!this.forkMap.hasOwnProperty(name))
+  if (!this.forksMap.hasOwnProperty(name))
   {
-    this.forkMap[ name ] = fork(path);
-    this.forkMap[ name ].on('message', this.handleForkMessage);
+    this.forksMap[ name ] = fork(path);
+    this.forksMap[ name ].on('message', this.handleForkMessage);
     this.log('Fork: ' + name + ' (child process) @ '+ path +' has been added to your Application');
   }
 };
 
 Jim.prototype.removeFork = function(name)
 {
-  if (this.forkMap.hasOwnProperty(name))
+  if (this.forksMap.hasOwnProperty(name))
   {
-    this.forkMap[ name ].kill();
-    delete this.forkMap[ name ];
+    this.forksMap[ name ].kill();
+    delete this.forksMap[ name ];
   }
 };
 
