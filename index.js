@@ -914,6 +914,15 @@ const { fork } = require('child_process');
   {
     this._initialize(parentProcess);
   }
+
+  // STATIC
+  Jim.log = function(obj)
+  {
+    if(Jim.isDebug) console.log(obj);
+  }
+
+  Jim.isDebug = true;
+
   // INIT
   Jim.prototype._initialize = function(parentProcess)
   {
@@ -927,6 +936,7 @@ const { fork } = require('child_process');
 
     this.jimiesMap = {};
     this.forksMap = {};
+    this.registryMap = {};
 
     if(parentProcess)
     {
@@ -1114,7 +1124,7 @@ const { fork } = require('child_process');
     return this.model.hasProxy(proxyName);
   };
 
-  // VIEW SHORT CUTS
+  // SERVICE SHORT CUTS
   Jim.prototype.registerService = function(service)
   {
     if (this.controller != null)
@@ -1145,18 +1155,34 @@ const { fork } = require('child_process');
     return this.controller.hasService(serviceName);
   };
 
+  // REGISTRY
+  // JIMI
+  Jim.prototype.register = function(type, name, obj)
+  {
+    if (!this.registryMap.hasOwnProperty(type))
+    {
+      this.registryMap[type] = {};
+      if (!this.registryMap[type].hasOwnProperty(name))
+      {
+        this.registryMap[type][name] = obj;
+      }
+    }
+  };
+
+  Jim.prototype.remove = function(type, name)
+  {
+    if ( this.registryMap.hasOwnProperty(type) && this.registryMap[type].hasOwnProperty(name))
+    {
+      delete this.registryMap[type][name];
+    }
+  };
+
   Jim.prototype.controller = null;
   Jim.prototype.model = null;
   Jim.prototype.jimiesMap = null;
   Jim.prototype.forksMap = null;
   Jim.prototype.parentProcess = null;
-
-  Jim.log = function(obj)
-  {
-    if(Jim.isDebug) console.log(obj);
-  }
-
-  Jim.isDebug = true;
+  Jim.prototype.registryMap = null;
 
   /***
   *                                         __
