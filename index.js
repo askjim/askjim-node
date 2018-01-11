@@ -894,7 +894,7 @@ Jim.prototype._initialize = function(parentProcess)
 // MAIN FCT
 Jim.prototype.dispatch = function(instructionName, body, type, header)
 {
-  this.log('Jim  dispatch' + instructionName);
+  this.log('Jim  dispatch ' + instructionName);
   this.controller.dispatch(instructionName, body, type, header);
 };
 
