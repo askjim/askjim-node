@@ -1,6 +1,6 @@
 {
   "name": "askjim-node",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Command driven framework for node",
   "repository": "github:askjim/askjim-node",
   "main": "index.js",
